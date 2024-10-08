@@ -1,0 +1,230 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_STATES 10
+#define MAX_ALPHABET 10
+
+typedef struct {
+    char states[MAX_STATES][20];
+    char alphabet[MAX_ALPHABET];
+    int transition[MAX_STATES][MAX_ALPHABET];
+    int start_state;
+    int accept_states[MAX_STATES];
+    int num_states;
+    int num_alphabet;
+    int num_accept_states;
+} DFA;
+
+typedef struct {
+    char states[MAX_STATES][20];
+    char alphabet[MAX_ALPHABET];
+    int transition[MAX_STATES][MAX_ALPHABET][MAX_STATES];
+    int start_state;
+    int accept_states[MAX_STATES];
+    int num_states;
+    int num_alphabet;
+    int num_accept_states;
+} NFA;
+
+// Function to create a DFA
+void create_dfa(DFA *dfa) {
+    printf("Enter number of states: ");
+    scanf("%d", &dfa->num_states);
+    printf("Enter states:\n");
+    for (int i = 0; i < dfa->num_states; i++) {
+        scanf("%s", dfa->states[i]);
+    }
+
+    printf("Enter number of symbols in alphabet: ");
+    scanf("%d", &dfa->num_alphabet);
+    printf("Enter alphabet:\n");
+    for (int i = 0; i < dfa->num_alphabet; i++) {
+        scanf(" %c", &dfa->alphabet[i]);
+    }
+
+    printf("Enter transition function (state, symbol, next_state):\n");
+    for (int i = 0; i < dfa->num_states; i++) {
+        for (int j = 0; j < dfa->num_alphabet; j++) {
+            dfa->transition[i][j] = -1; // Initialize to -1
+        }
+    }
+
+    for (int i = 0; i < dfa->num_states; i++) {
+        for (int j = 0; j < dfa->num_alphabet; j++) {
+            printf("From state %s on symbol %c to state: ", dfa->states[i], dfa->alphabet[j]);
+            char next_state[20];
+            scanf("%s", next_state);
+            for (int k = 0; k < dfa->num_states; k++) {
+                if (strcmp(dfa->states[k], next_state) == 0) {
+                    dfa->transition[i][j] = k;
+                    break;
+                }
+            }
+        }
+    }
+
+    printf("Enter start state: ");
+    char start_state[20];
+    scanf("%s", start_state);
+    for (int i = 0; i < dfa->num_states; i++) {
+        if (strcmp(dfa->states[i], start_state) == 0) {
+            dfa->start_state = i;
+            break;
+        }
+    }
+
+    printf("Enter number of accept states: ");
+    scanf("%d", &dfa->num_accept_states);
+    printf("Enter accept states:\n");
+    for (int i = 0; i < dfa->num_accept_states; i++) {
+        char accept_state[20];
+        scanf("%s", accept_state);
+        for (int j = 0; j < dfa->num_states; j++) {
+            if (strcmp(dfa->states[j], accept_state) == 0) {
+                dfa->accept_states[i] = j;
+                break;
+            }
+        }
+    }
+}
+
+// Function to test string acceptance for DFA
+int dfa_accepts(DFA *dfa, char *input) {
+    int current_state = dfa->start_state;
+    for (int i = 0; i < strlen(input); i++) {
+        char symbol = input[i];
+        int symbol_index = -1;
+        for (int j = 0; j < dfa->num_alphabet; j++) {
+            if (dfa->alphabet[j] == symbol) {
+                symbol_index = j;
+                break;
+            }
+        }
+        if (symbol_index == -1 || dfa->transition[current_state][symbol_index] == -1) {
+            return 0; // Not accepted
+        }
+        current_state = dfa->transition[current_state][symbol_index];
+    }
+    for (int i = 0; i < dfa->num_accept_states; i++) {
+        if (current_state == dfa->accept_states[i]) {
+            return 1; // Accepted
+        }
+    }
+    return 0; // Not accepted
+}
+
+// Function to create an NFA
+void create_nfa(NFA *nfa) {
+    printf("Enter number of states: ");
+    scanf("%d", &nfa->num_states);
+    printf("Enter states:\n");
+    for (int i = 0; i < nfa->num_states; i++) {
+        scanf("%s", nfa->states[i]);
+    }
+
+    printf("Enter number of symbols in alphabet: ");
+    scanf("%d", &nfa->num_alphabet);
+    printf("Enter alphabet:\n");
+    for (int i = 0; i < nfa->num_alphabet; i++) {
+        scanf(" %c", &nfa->alphabet[i]);
+    }
+
+    printf("Enter transition function (state, symbol, next_state):\n");
+    for (int i = 0; i < nfa->num_states; i++) {
+        for (int j = 0; j < nfa->num_alphabet; j++) {
+            nfa->transition[i][j][0] = -1; // Initialize to -1
+        }
+    }
+
+    for (int i = 0; i < nfa->num_states; i++) {
+        for (int j = 0; j < nfa->num_alphabet; j++) {
+            printf("From state %s on symbol %c to state: ", nfa->states[i], nfa->alphabet[j]);
+            char next_state[20];
+            int index = 0;
+            while (1) {
+                scanf("%s", next_state);
+                if (strcmp(next_state, "END") == 0) break; // End input for this symbol
+                for (int k = 0; k < nfa->num_states; k++) {
+                    if (strcmp(nfa->states[k], next_state) == 0) {
+                        nfa->transition[i][j][index++] = k;
+                        break;
+                    }
+                }
+            }
+            nfa->transition[i][j][index] = -1; // Terminate the list
+        }
+    }
+
+    printf("Enter start state: ");
+    char start_state[20];
+    scanf("%s", start_state);
+    for (int i = 0; i < nfa->num_states; i++) {
+        if (strcmp(nfa->states[i], start_state) == 0) {
+            nfa->start_state = i;
+            break;
+        }
+    }
+
+    printf("Enter number of accept states: ");
+    scanf("%d", &nfa->num_accept_states);
+    printf("Enter accept states:\n");
+    for (int i = 0; i < nfa->num_accept_states; i++) {
+        char accept_state[20];
+        scanf("%s", accept_state);
+        for (int j = 0; j < nfa->num_states; j++) {
+            if (strcmp(nfa->states[j], accept_state) == 0) {
+                nfa->accept_states[i] = j;
+                break;
+            }
+        }
+    }
+}
+
+// Function to test string acceptance for NFA
+int nfa_accepts(NFA *nfa, char *input) {
+    int current_states[MAX_STATES];
+    int num_current_states = 0;
+    current_states[num_current_states++] = nfa->start_state;
+
+    for (int i = 0; i < strlen(input); i++) {
+        char symbol = input[i];
+        int new_states[MAX_STATES];
+        int num_new_states = 0;
+
+        for (int j = 0; j < num_current_states; j++) {
+            int state = current_states[j];
+            int symbol_index = -1;
+            for (int k = 0; k < nfa->num_alphabet; k++) {
+                if (nfa->alphabet[k] == symbol) {
+                    symbol_index = k;
+                    break;
+                }
+            }
+            if (symbol_index != -1) {
+                for (int k = 0; nfa->transition[state][symbol_index][k] != -1; k++) {
+                    new_states[num_new_states++] = nfa->transition[state][symbol_index][k];
+                }
+            }
+        }
+
+        num_current_states = 0;
+        for (int j = 0; j < num_new_states; j++) {
+            current_states[num_current_states++] = new_states[j];
+        }
+    }
+
+    for (int i = 0; i < num_current_states; i++) {
+        for (int j = 0; j < nfa->num_accept_states; j++) {
+            if (current_states[i] == nfa->accept_states[j]) {
+                return 1; // Accepted
+            }
+        }
+    }
+    return 0; // Not accepted
+}
+
+int main() {
+    int choice;
+    printf("Choose automaton type (1: DFA, 2: NFA): ");
+    scanf("%d
